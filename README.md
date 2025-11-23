@@ -28,6 +28,9 @@ Internet
    +---> [Private Subnet: 10.0.2.0/24]
             |
             +---> [RDS MySQL 8] (obeliondb)
+
+            <img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/e6e67c19-02a1-443a-a373-53af96c4333b" />
+
 ```
 
 ## Prerequisites
