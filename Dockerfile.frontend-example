@@ -1,0 +1,32 @@
+# Frontend Dockerfile Example - لـ GitHub Actions Build
+
+# استخدم صورة Node.js إذا كان المشروع يحتاج preprocessing
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# انسخ package.json و package-lock.json (إذا وجد)
+COPY package*.json ./
+
+# ثبت dependencies
+RUN npm install
+
+# بناء التطبيق (إذا لزم الأمر)
+COPY . .
+RUN npm run build 2>/dev/null || true
+
+# ============================================
+# المرحلة الثانية - إنتاج الصورة
+# ============================================
+FROM louislam/uptime-kuma:latest
+
+# إذا كان لديك ملفات مخصصة، انسخها:
+# COPY --from=builder /app/dist /app/public
+
+# يمكنك إضافة ملفات تكوين مخصصة:
+# COPY ./config.json /app/config.json
+
+# الصورة جاهزة للاستخدام بدون تعديل إضافي
+EXPOSE 3001
+
+# docker-compose سيتولى التشغيل

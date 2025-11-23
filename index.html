@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Architecture Diagram - AWS Infrastructure &amp; CI/CD</title>
+    <style>
+        /* Design System */
+        :root {
+            --color-white: rgba(255, 255, 255, 1);
+            --color-black: rgba(0, 0, 0, 1);
+            --color-cream-50: rgba(252, 252, 249, 1);
+            --color-cream-100: rgba(255, 255, 253, 1);
+            --color-gray-200: rgba(245, 245, 245, 1);
+            --color-gray-300: rgba(167, 169, 169, 1);
+            --color-gray-400: rgba(119, 124, 124, 1);
+            --color-slate-500: rgba(98, 108, 113, 1);
+            --color-brown-600: rgba(94, 82, 64, 1);
+            --color-charcoal-700: rgba(31, 33, 33, 1);
+            --color-charcoal-800: rgba(38, 40, 40, 1);
+            --color-slate-900: rgba(19, 52, 59, 1);
+            --color-teal-300: rgba(50, 184, 198, 1);
+            --color-teal-400: rgba(45, 166, 178, 1);
+            --color-teal-500: rgba(33, 128, 141, 1);
+            --color-teal-600: rgba(29, 116, 128, 1);
+            --color-teal-700: rgba(26, 104, 115, 1);
+            --color-orange-400: rgba(230, 129, 97, 1);
+            --color-orange-500: rgba(168, 75, 47, 1);
+            --color-brown-600-rgb: 94, 82, 64;
+            --color-teal-500-rgb: 33, 128, 141;
+            --color-slate-900-rgb: 19, 52, 59;
+            --color-background: var(--color-cream-50);
+            --color-surface: var(--color-cream-100);
+            --color-text: var(--color-slate-900);
+            --color-text-secondary: var(--color-slate-500);
+            --color-primary: var(--color-teal-500);
+            --color-primary-hover: var(--color-teal-600);
+            --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+            --color-card-border: rgba(var(--color-brown-600-rgb), 0.12);
+            --font-family-base: 'FKGroteskNeue', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-size-xs: 11px;
+            --font-size-sm: 12px;
+            --font-size-base: 14px;
+            --font-size-lg: 16px;
+            --font-size-xl: 18px;
+            --font-size-2xl: 20px;
+            --font-size-3xl: 24px;
+            --font-size-4xl: 30px;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 550;
+            --font-weight-bold: 600;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-20: 20px;
+            --space-24: 24px;
+            --space-32: 32px;
+            --radius-base: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-background: var(--color-charcoal-700);
+                --color-surface: var(--color-charcoal-800);
+                --color-text: var(--color-gray-200);
+                --color-text-secondary: rgba(167, 169, 169, 0.7);
+                --color-primary: var(--color-teal-300);
+                --color-primary-hover: var(--color-teal-400);
+                --color-border: rgba(119, 124, 124, 0.3);
+                --color-card-border: rgba(119, 124, 124, 0.2);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--color-background);
+            color: var(--color-text);
+            line-height: 1.6;
+            padding: var(--space-24);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: var(--space-32);
+        }
+
+        .header h1 {
+            font-size: var(--font-size-4xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-text);
+            margin-bottom: var(--space-12);
+        }
+
+        .header p {
+            font-size: var(--font-size-lg);
+            color: var(--color-text-secondary);
+        }
+
+        .actions {
+            display: flex;
+            gap: var(--space-12);
+            justify-content: center;
+            margin-top: var(--space-20);
+        }
+
+        .btn {
+            padding: var(--space-12) var(--space-24);
+            border: none;
+            border-radius: var(--radius-base);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--color-surface);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .architecture-diagram {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-card-border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-32);
+            margin-bottom: var(--space-24);
+        }
+
+        .section-title {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-24);
+            color: var(--color-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--space-12);
+        }
+
+        .section-title::before {
+            content: '▼';
+            font-size: var(--font-size-sm);
+            transition: transform 0.3s;
+        }
+
+        .section-title.collapsed::before {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            display: block;
+        }
+
+        .section-content.hidden {
+            display: none;
+        }
+
+        .diagram-flow {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-24);
+        }
+
+        .vpc-container {
+            border: 2px dashed var(--color-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-24);
+            background-color: rgba(var(--color-teal-500-rgb), 0.05);
+            position: relative;
+        }
+
+        .vpc-label {
+            position: absolute;
+            top: -12px;
+            left: var(--space-16);
+            background-color: var(--color-surface);
+            padding: 0 var(--space-8);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-primary);
+        }
+
+        .subnet-row {
+            display: flex;
+            gap: var(--space-24);
+            margin-top: var(--space-16);
+        }
+
+        .subnet {
+            flex: 1;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-16);
+            background-color: var(--color-surface);
+            position: relative;
+        }
+
+        .subnet-label {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-16);
+        }
+
+        .resource-card {
+            background-color: var(--color-surface);
+            border: 2px solid var(--color-card-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-16);
+            margin-bottom: var(--space-12);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .resource-card:hover {
+            border-color: var(--color-primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .resource-card.ec2 {
+            border-left: 4px solid #FF9900;
+        }
+
+        .resource-card.rds {
+            border-left: 4px solid #527FFF;
+        }
+
+        .resource-card.github {
+            border-left: 4px solid #24292e;
+        }
+
+        .resource-card.monitoring {
+            border-left: 4px solid #FF4F00;
+        }
+
+        .resource-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-12);
+            margin-bottom: var(--space-8);
+        }
+
+        .resource-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-lg);
+        }
+
+        .resource-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text);
+        }
+
+        .resource-specs {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+            margin-top: var(--space-8);
+        }
+
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--space-8) 0;
+            border-bottom: 1px solid var(--color-card-border);
+        }
+
+        .spec-item:last-child {
+            border-bottom: none;
+        }
+
+        .spec-label {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-secondary);
+        }
+
+        .spec-value {
+            color: var(--color-text);
+        }
+
+        .flow-arrow {
+            text-align: center;
+            color: var(--color-primary);
+            font-size: var(--font-size-2xl);
+            margin: var(--space-8) 0;
+        }
+
+        .cicd-workflow {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-24);
+            margin-top: var(--space-16);
+        }
+
+        .workflow-card {
+            background-color: var(--color-surface);
+            border: 2px solid var(--color-card-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-20);
+        }
+
+        .workflow-step {
+            background-color: rgba(var(--color-teal-500-rgb), 0.1);
+            border-left: 3px solid var(--color-primary);
+            padding: var(--space-12);
+            margin: var(--space-8) 0;
+            border-radius: var(--radius-base);
+        }
+
+        .workflow-step-title {
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text);
+            margin-bottom: var(--space-8);
+        }
+
+        .workflow-step-detail {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+
+        .legend {
+            display: flex;
+            gap: var(--space-24);
+            flex-wrap: wrap;
+            margin-top: var(--space-32);
+            padding: var(--space-16);
+            background-color: var(--color-surface);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-8);
+            font-size: var(--font-size-sm);
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-base);
+        }
+
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-16);
+            margin-top: var(--space-16);
+        }
+
+        .monitor-card {
+            background-color: var(--color-surface);
+            border: 2px solid var(--color-card-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-16);
+            text-align: center;
+        }
+
+        .monitor-metric {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-primary);
+            margin: var(--space-8) 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: var(--space-8) var(--space-12);
+            border-radius: var(--radius-base);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            margin: var(--space-8) var(--space-8) 0 0;
+        }
+
+        .badge-primary {
+            background-color: rgba(var(--color-teal-500-rgb), 0.15);
+            color: var(--color-primary);
+        }
+
+        .badge-warning {
+            background-color: rgba(255, 79, 0, 0.15);
+            color: #FF4F00;
+        }
+
+        .badge-info {
+            background-color: rgba(82, 127, 255, 0.15);
+            color: #527FFF;
+        }
+
+        .igw-box {
+            background-color: var(--color-surface);
+            border: 2px solid #FF9900;
+            border-radius: var(--radius-base);
+            padding: var(--space-16);
+            text-align: center;
+            margin-bottom: var(--space-16);
+        }
+
+        @media (max-width: 768px) {
+            .subnet-row {
+                flex-direction: column;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DevOps Architecture Diagram</h1>
+            <p>Complete AWS Infrastructure &amp; CI/CD Pipeline for Laravel &amp; Uptime Kuma Deployment</p>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="expandAll()">Expand All Sections</button>
+                <button class="btn btn-secondary" onclick="collapseAll()">Collapse All Sections</button>
+            </div>
+        </div>
+
+        <!-- Task Group A: Infrastructure -->
+        <div class="architecture-diagram">
+            <h2 class="section-title" onclick="toggleSection('infra')">
+                Task Group A: Infrastructure Setup (AWS)
+            </h2>
+            <div id="infra" class="section-content">
+                <div class="diagram-flow">
+                    <!-- Internet Gateway -->
+                    <div class="igw-box">
+                        <div class="resource-header">
+                            <div class="resource-icon">🌐</div>
+                            <div class="resource-title">Internet Gateway</div>
+                        </div>
+                        <div class="resource-specs">Public internet access point</div>
+                    </div>
+
+                    <div class="flow-arrow">↓</div>
+
+                    <!-- VPC Container -->
+                    <div class="vpc-container">
+                        <div class="vpc-label">VPC: 10.0.0.0/16</div>
+                        
+                        <div class="subnet-row">
+                            <!-- Public Subnet -->
+                            <div class="subnet">
+                                <div class="subnet-label">📡 Public Subnet (10.0.1.0/24)</div>
+                                
+                                <!-- Backend EC2 -->
+                                <div class="resource-card ec2" onclick="toggleDetails('backend-details')">
+                                    <div class="resource-header">
+                                        <div class="resource-icon">🖥️</div>
+                                        <div class="resource-title">Backend EC2</div>
+                                    </div>
+                                    <div class="resource-specs">
+                                        <span class="badge badge-primary">Laravel PHP</span>
+                                        <span class="badge badge-info">Public IP</span>
+                                    </div>
+                                    <div id="backend-details" class="resource-specs" style="display: none; margin-top: 12px;">
+                                        <div class="spec-item">
+                                            <span class="spec-label">CPU:</span>
+                                            <span class="spec-value">1 Core</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">RAM:</span>
+                                            <span class="spec-value">1 GB</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">Disk:</span>
+                                            <span class="spec-value">8 GB</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">OS:</span>
+                                            <span class="spec-value">Ubuntu 22.04</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Frontend EC2 -->
+                                <div class="resource-card ec2" onclick="toggleDetails('frontend-details')">
+                                    <div class="resource-header">
+                                        <div class="resource-icon">💻</div>
+                                        <div class="resource-title">Frontend EC2</div>
+                                    </div>
+                                    <div class="resource-specs">
+                                        <span class="badge badge-primary">Uptime Kuma</span>
+                                        <span class="badge badge-info">Public IP</span>
+                                    </div>
+                                    <div id="frontend-details" class="resource-specs" style="display: none; margin-top: 12px;">
+                                        <div class="spec-item">
+                                            <span class="spec-label">CPU:</span>
+                                            <span class="spec-value">1 Core</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">RAM:</span>
+                                            <span class="spec-value">1 GB</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">Disk:</span>
+                                            <span class="spec-value">8 GB</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">OS:</span>
+                                            <span class="spec-value">Ubuntu 22.04</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Private Subnet -->
+                            <div class="subnet">
+                                <div class="subnet-label">🔒 Private Subnet (10.0.2.0/24)</div>
+                                
+                                <!-- RDS MySQL -->
+                                <div class="resource-card rds" onclick="toggleDetails('rds-details')">
+                                    <div class="resource-header">
+                                        <div class="resource-icon">🗄️</div>
+                                        <div class="resource-title">RDS MySQL 8</div>
+                                    </div>
+                                    <div class="resource-specs">
+                                        <span class="badge badge-info">No Internet</span>
+                                        <span class="badge badge-primary">db.t3.micro</span>
+                                    </div>
+                                    <div id="rds-details" class="resource-specs" style="display: none; margin-top: 12px;">
+                                        <div class="spec-item">
+                                            <span class="spec-label">Engine:</span>
+                                            <span class="spec-value">MySQL Community 8</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">Instance:</span>
+                                            <span class="spec-value">db.t3.micro (lowest tier)</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">Database:</span>
+                                            <span class="spec-value">obeliondb</span>
+                                        </div>
+                                        <div class="spec-item">
+                                            <span class="spec-label">Access:</span>
+                                            <span class="spec-value">Private only</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Group B: CI/CD -->
+        <div class="architecture-diagram">
+            <h2 class="section-title" onclick="toggleSection('cicd')">
+                Task Group B: CI/CD &amp; Automation (GitHub Actions)
+            </h2>
+            <div id="cicd" class="section-content">
+                <div class="cicd-workflow">
+                    <!-- Frontend Workflow -->
+                    <div class="workflow-card">
+                        <div class="resource-header">
+                            <div class="resource-icon">⚙️</div>
+                            <div class="resource-title">Frontend Deployment</div>
+                        </div>
+                        <span class="badge badge-primary">GitHub Actions</span>
+                        
+                        <div style="margin-top: 16px;">
+                            <div class="workflow-step">
+                                <div class="workflow-step-title">1. Trigger</div>
+                                <div class="workflow-step-detail">Push to main branch (Frontend Repo)</div>
+                            </div>
+                            
+                            <div class="flow-arrow">↓</div>
+                            
+                            <div class="workflow-step">
+                                <div class="workflow-step-title">2. Build</div>
+                                <div class="workflow-step-detail">Docker Compose build</div>
+                                <div class="workflow-step-detail">Image: uptimekuma (Docker Hub)</div>
+                                <code style="font-size: 11px; color: var(--color-text-secondary);">echo building ....</code>
+                            </div>
+                            
+                            <div class="flow-arrow">↓</div>
+                            
+                            <div class="workflow-step">
+                                <div class="workflow-step-title">3. Deploy</div>
+                                <div class="workflow-step-detail">Target: Frontend EC2 (Ubuntu 22.04)</div>
+                                <div class="workflow-step-detail">Method: Automated deployment</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backend Workflow -->
+                    <div class="workflow-card">
+                        <div class="resource-header">
+                            <div class="resource-icon">⚙️</div>
+                            <div class="resource-title">Backend Deployment</div>
+                        </div>
+                        <span class="badge badge-primary">GitHub Actions</span>
+                        
+                        <div style="margin-top: 16px;">
+                            <div class="workflow-step">
+                                <div class="workflow-step-title">1. Trigger</div>
+                                <div class="workflow-step-detail">Push to main branch (Laravel Repo)</div>
+                            </div>
+                            
+                            <div class="flow-arrow">↓</div>
+                            
+                            <div class="workflow-step">
+                                <div class="workflow-step-title">2. SSH Connection</div>
+                                <div class="workflow-step-detail">Connect to Backend EC2</div>
+                            </div>
+                            
+                            <div class="flow-arrow">↓</div>
+                            
+                            <div class="workflow-step">
+                                <div class="workflow-step-title">3. Pull Changes</div>
+                                <div class="workflow-step-detail"><code style="font-size: 11px;">git pull origin main</code></div>
+                            </div>
+                            
+                            <div class="flow-arrow">↓</div>
+                            
+                            <div class="workflow-step">
+                                <div class="workflow-step-title">4. Database Migration</div>
+                                <div class="workflow-step-detail"><code style="font-size: 11px;">php artisan migrate</code></div>
+                                <div class="workflow-step-detail">Apply schema changes automatically</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring Section -->
+        <div class="architecture-diagram">
+            <h2 class="section-title" onclick="toggleSection('monitoring')">
+                Task Group B: Monitoring &amp; Alerts
+            </h2>
+            <div id="monitoring" class="section-content">
+                <div class="monitoring-grid">
+                    <div class="monitor-card">
+                        <div class="resource-header" style="justify-content: center;">
+                            <div class="resource-icon">📊</div>
+                            <div class="resource-title">CloudWatch</div>
+                        </div>
+                        <div class="resource-specs">Metrics Collection</div>
+                        <div class="monitor-metric">CPU</div>
+                        <span class="badge badge-primary">Both EC2 Instances</span>
+                    </div>
+
+                    <div class="monitor-card">
+                        <div class="resource-header" style="justify-content: center;">
+                            <div class="resource-icon">⚠️</div>
+                            <div class="resource-title">Alert Threshold</div>
+                        </div>
+                        <div class="resource-specs">CPU Utilization</div>
+                        <div class="monitor-metric">&gt;50%</div>
+                        <span class="badge badge-warning">Critical Alert</span>
+                    </div>
+
+                    <div class="monitor-card">
+                        <div class="resource-header" style="justify-content: center;">
+                            <div class="resource-icon">🔔</div>
+                            <div class="resource-title">AWS SNS</div>
+                        </div>
+                        <div class="resource-specs">Notification Service</div>
+                        <div style="margin-top: 16px;">
+                            <span class="badge badge-info">Email Alerts</span>
+                        </div>
+                    </div>
+
+                    <div class="monitor-card">
+                        <div class="resource-header" style="justify-content: center;">
+                            <div class="resource-icon">📧</div>
+                            <div class="resource-title">Email Delivery</div>
+                        </div>
+                        <div class="resource-specs">Alert Destination</div>
+                        <div style="margin-top: 16px;">
+                            <span class="badge badge-primary">User Notification</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px; padding: 16px; background-color: rgba(var(--color-teal-500-rgb), 0.1); border-left: 4px solid var(--color-primary); border-radius: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 8px;">📈 Monitoring Flow:</div>
+                    <div style="font-size: 14px; color: var(--color-text-secondary);">
+                        EC2 Instances → CloudWatch Metrics → CPU Threshold Check → SNS Topic → Email Notification
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FF9900;"></div>
+                <span>AWS EC2</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #527FFF;"></div>
+                <span>AWS RDS</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #24292e;"></div>
+                <span>GitHub Actions</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FF4F00;"></div>
+                <span>Monitoring/Alerts</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: var(--color-primary);"></div>
+                <span>Network/VPC</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const title = section.previousElementSibling;
+            
+            if (section.classList.contains('hidden')) {
+                section.classList.remove('hidden');
+                title.classList.remove('collapsed');
+            } else {
+                section.classList.add('hidden');
+                title.classList.add('collapsed');
+            }
+        }
+
+        function toggleDetails(detailId) {
+            const details = document.getElementById(detailId);
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+            } else {
+                details.style.display = 'none';
+            }
+        }
+
+        function expandAll() {
+            const sections = document.querySelectorAll('.section-content');
+            const titles = document.querySelectorAll('.section-title');
+            
+            sections.forEach(section => section.classList.remove('hidden'));
+            titles.forEach(title => title.classList.remove('collapsed'));
+        }
+
+        function collapseAll() {
+            const sections = document.querySelectorAll('.section-content');
+            const titles = document.querySelectorAll('.section-title');
+            
+            sections.forEach(section => section.classList.add('hidden'));
+            titles.forEach(title => title.classList.add('collapsed'));
+        }
+    </script>
+</body>
+</html>

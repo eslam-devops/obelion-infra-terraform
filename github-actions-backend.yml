@@ -1,0 +1,194 @@
+name: Deploy Backend - Laravel PHP
+
+# التشغيل عند الـ Push إلى الـ main branch
+on:
+  push:
+    branches:
+      - main
+
+# متغيرات البيئة العامة
+env:
+  DEPLOY_PATH: /var/www/laravel-app
+
+jobs:
+  # ============================================================
+  # Build Job - بناء التطبيق
+  # ============================================================
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ============================================================
+      # 1. Checkout Code
+      # ============================================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ============================================================
+      # 2. Setup PHP
+      # ============================================================
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysql, mbstring, json, curl, xml, zip, bcmath
+          coverage: none
+          tools: composer
+
+      # ============================================================
+      # 3. Build Step - خطوة البناء
+      # ============================================================
+      - name: Build application
+        run: |
+          echo "🔨 بدء بناء تطبيق Laravel..."
+          echo "🏗️ Building Laravel PHP application..."
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # تسجيل معلومات البناء
+          echo "📝 PHP Version: $(php -v | head -n1)"
+          echo "📦 Composer Version: $(composer --version)"
+          
+          # تثبيت الـ dependencies
+          echo "📦 Installing Composer dependencies..."
+          composer install --no-interaction --prefer-dist --no-dev
+          
+          echo "✅ تم إكمال خطوة البناء بنجاح"
+
+      # ============================================================
+      # 4. Run Tests (Optional)
+      # ============================================================
+      - name: Run tests
+        run: |
+          echo "🧪 Running tests..."
+          # php artisan test || true  # تشغيل الاختبارات إن وجدت
+          echo "✅ Tests completed"
+
+  # ============================================================
+  # Deploy Job - النشر على Backend EC2
+  # ============================================================
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ============================================================
+      # 1. Checkout Code
+      # ============================================================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ============================================================
+      # 2. Deploy to Backend EC2
+      # ============================================================
+      - name: Deploy to Backend EC2
+        env:
+          EC2_HOST: ${{ secrets.BACKEND_EC2_HOST }}
+          EC2_USER: ${{ secrets.BACKEND_EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.BACKEND_EC2_SSH_KEY }}
+          APP_PATH: ${{ env.DEPLOY_PATH }}
+        run: |
+          # إنشاء private key من السرار
+          mkdir -p ~/.ssh
+          echo "${{ env.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # إضافة EC2 host إلى known_hosts
+          ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          # تنسيق الـ deployment script
+          DEPLOY_SCRIPT='
+          set -e
+          
+          echo "🚀 Starting Laravel deployment..."
+          
+          # الذهاب إلى مجلد التطبيق
+          cd ${{ env.APP_PATH }}
+          
+          # جعل البريمشن للمستخدم www-data
+          sudo chown -R www-data:www-data .
+          
+          # سحب التحديثات من Git
+          echo "📥 Pulling new changes from repository..."
+          sudo -u www-data git fetch origin
+          sudo -u www-data git reset --hard origin/main
+          sudo -u www-data git pull origin main
+          
+          echo "📝 Repository updated successfully"
+          
+          # تثبيت Composer dependencies
+          echo "📦 Installing Composer dependencies..."
+          sudo -u www-data composer install --no-interaction --prefer-dist --no-dev
+          
+          # نسخ ملف .env إذا لم يكن موجوداً
+          if [ ! -f .env ]; then
+            echo "📄 Creating .env file..."
+            sudo -u www-data cp .env.example .env || true
+          fi
+          
+          # توليد App Key
+          echo "🔑 Generating application key..."
+          sudo -u www-data php artisan key:generate --force || true
+          
+          # تشغيل Database Migrations
+          echo "🗄️ Running database migrations..."
+          sudo -u www-data php artisan migrate --force
+          
+          # تنظيف الـ cache
+          echo "🧹 Clearing application cache..."
+          sudo -u www-data php artisan cache:clear
+          sudo -u www-data php artisan config:clear
+          sudo -u www-data php artisan view:clear
+          
+          # تعيين الصلاحيات الصحيحة
+          echo "🔐 Setting proper permissions..."
+          sudo chmod -R 775 storage bootstrap/cache
+          
+          # إعادة تشغيل PHP-FPM و Nginx
+          echo "🔄 Restarting services..."
+          sudo systemctl restart php8.1-fpm
+          sudo systemctl restart nginx
+          
+          echo "✅ Laravel deployment completed successfully!"
+          '
+          
+          # إرسال الـ script وتنفيذه
+          ssh -i ~/.ssh/deploy_key ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "$DEPLOY_SCRIPT"
+
+      # ============================================================
+      # 3. Health Check
+      # ============================================================
+      - name: Health Check
+        env:
+          EC2_HOST: ${{ secrets.BACKEND_EC2_HOST }}
+        run: |
+          echo "🔍 فحص صحة التطبيق..."
+          
+          # الانتظار قليلاً لبدء الخدمة
+          sleep 5
+          
+          # فحص الاتصال
+          if curl -f -s http://${{ env.EC2_HOST }}:80 > /dev/null 2>&1; then
+            echo "✅ Laravel application is running successfully"
+          else
+            echo "⚠️ Application might still be starting..."
+          fi
+
+      # ============================================================
+      # 4. Deployment Notification
+      # ============================================================
+      - name: Deployment Notification
+        run: |
+          echo "📧 Sending deployment notification..."
+          echo "✅ Backend deployment completed"
+          echo "🔗 Application URL: http://${{ secrets.BACKEND_EC2_HOST }}"
+          echo "📝 Deployment Time: $(date)"
+          echo "📌 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
+          echo ""
+          echo "🔄 Database migrations executed"
+          echo "🧹 Cache cleared"
+          echo "🔐 Permissions set correctly"

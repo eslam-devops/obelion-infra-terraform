@@ -1,0 +1,56 @@
+# docker-compose.yml - Uptime Kuma Configuration for Frontend EC2
+
+version: '3.8'
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: always
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime-kuma-data:/app/data
+    environment:
+      # المتغيرات البيئية للـ Uptime Kuma
+      - TIMEZONE=UTC
+      - NODE_ENV=production
+    networks:
+      - uptime-kuma-network
+    # تحديد الموارد
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  uptime-kuma-data:
+    driver: local
+
+networks:
+  uptime-kuma-network:
+    driver: bridge
+
+# ============================================
+# ملاحظات واستخدام
+# ============================================
+# 
+# تشغيل الخدمة:
+# docker-compose up -d
+# 
+# إيقاف الخدمة:
+# docker-compose down
+# 
+# عرض السجلات:
+# docker-compose logs -f uptime-kuma
+# 
+# إعادة تشغيل:
+# docker-compose restart
+# 
+# حذف البيانات (تحذير: سيحذف جميع البيانات):
+# docker-compose down -v
+#
