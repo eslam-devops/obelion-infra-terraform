@@ -1,0 +1,50 @@
+# Frontend Deployment Workflow
+# أتمتة نشر Frontend (Uptime Kuma)
+
+name: Frontend Deployment
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Build frontend
+        run: |
+          echo "Building frontend application..."
+          echo "Preparing for deployment"
+      
+      - name: Deploy to Ubuntu server
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts
+          
+          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_SERVER << 'DEPLOYMENT'
+            cd /opt/frontend || mkdir -p /opt/frontend
+            cat > docker-compose.yml << 'COMPOSE'
+version: '3'
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime-kuma:/app/data
+volumes:
+  uptime-kuma:
+            COMPOSE
+            docker-compose up -d
+            echo "Frontend deployed successfully"
+          DEPLOYMENT
