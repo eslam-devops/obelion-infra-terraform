@@ -11,6 +11,8 @@ It provisions:
 - **Internet Gateway** and routing configuration
 
 ## Architecture
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/4966a6bb-5c27-4e5c-a5b8-5b775e2d4712" />
+
 ```
 Internet
    |
