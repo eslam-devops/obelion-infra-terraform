@@ -1,0 +1,19 @@
+# AWS Configuration
+aws_region        = "us-east-1"
+availability_zone = "us-east-1a"
+
+# VPC Configuration
+vpc_cidr              = "10.0.0.0/16"
+public_subnet_cidr    = "10.0.1.0/24"
+private_subnet_cidr   = "10.0.2.0/24"
+
+# EC2 Configuration
+instance_type = "t2.micro"
+disk_size     = 8
+
+# RDS MySQL Configuration
+db_instance_class  = "db.t3.micro"
+db_allocated_storage = 20
+db_name             = "obeliondb"
+db_username         = "admin"
+db_password         = "ChangeMe123!"
