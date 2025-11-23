@@ -1,0 +1,56 @@
+# CPU Monitoring and Alerting Workflow
+# مراقبة CPU وإرسال التنبيهات
+
+name: CPU Monitoring and Alerts
+
+on:
+  schedule:
+    # تشغيل كل 15 دقيقة
+    - cron: '*/15 * * * *'
+
+jobs:
+  monitor-cpu:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Check CPU utilization
+        env:
+          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts
+          
+          # Get CPU usage from server
+          CPU_USAGE=$(ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_SERVER 'top -bn1 | grep Cpu')
+          echo "CPU Usage: $CPU_USAGE"
+          
+          # Extract CPU percentage and check if above 50%
+          CPU_PERCENT=$(echo "$CPU_USAGE" | awk -F'[%,]' '{print $1}' | awk '{print $NF}')
+          echo "Current CPU: $CPU_PERCENT%"
+          
+          if (( $(echo "$CPU_PERCENT > 50" | bc -l) )); then
+            echo "ALERT: CPU usage is above 50%: $CPU_PERCENT%"
+            echo "Server: $DEPLOY_SERVER"
+            echo "Alert should be sent to: $ALERT_EMAIL"
+          else
+            echo "CPU usage is normal: $CPU_PERCENT%"
+          fi
+      
+      - name: Send email alert (if needed)
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.EMAIL_SERVER }}
+          server_port: ${{ secrets.EMAIL_PORT }}
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "Obelion Alert: High CPU Usage Detected"
+          to: ${{ secrets.ALERT_EMAIL }}
+          body: |
+            High CPU utilization detected on server!
+            Please check the server immediately.
